@@ -5,7 +5,7 @@
 项目按四个递进实验组织，既可以用于课程演示，也可以作为人工势场法局限性与改进方法的对比实验。
 
 > **公式显示说明**  
-> 本文的块公式使用 GitHub 官方支持的 `math` 围栏语法，上传到 GitHub 后由 MathJax 渲染。若某些本地 Markdown 预览器把公式显示为普通代码，请启用该编辑器的数学公式/MathJax 支持，或直接在 GitHub 仓库页面查看。
+> 为提高兼容性，本文只保留完成算法说明所必需的基础公式，并使用常见的 `$...$` 和 `$$...$$` 写法。公式中的位置、速度、力均表示三维向量。
 
 > **模型边界说明**  
 > 本项目采用的是三维一阶运动学模型，不是四旋翼飞行动力学模型。横滚角、俯仰角、偏航角、机臂和四个螺旋桨用于表现运动趋势和制作可视化动画；程序没有建立质量、惯性矩、推力、力矩、电机响应或空气动力学方程。视觉旋翼转速不会反作用于无人机的位置、速度或姿态。
@@ -14,7 +14,7 @@
 
 | 实验 | 研究问题 | 主要结果 | 结论 |
 |---|---|---|---|
-| 实验一 | 如何形成并保持三维楔形编队 | $k_{\mathrm{form}}=0.3,0.6,1.0$ 均到达目标，最终平均编队误差均小于 1 m | 增大编队增益可以缩短完成时间并减小全过程误差，但会使姿态调整更积极 |
+| 实验一 | 如何形成并保持三维楔形编队 | `k_form=0.3/0.6/1.0` 均到达目标，最终平均编队误差均小于 1 m | 增大编队增益可以缩短完成时间并减小全过程误差，但会使姿态调整更积极 |
 | 实验二 | 标准人工势场能否绕开静态球形障碍物 | 关闭避障时发生 5 次障碍物碰撞；开启 APF 后碰撞降为 0 | APF 能有效完成静态避障，但会增加绕行距离、任务时间和姿态变化 |
 | 实验三 | 标准 APF 的局部极小如何改善 | 10 个种子中，标准 APF 成功率为 10%，加入切向逃逸力后为 100% | 连续多步检测加切向逃逸可以明显改善本场景中的局部极小问题 |
 | 实验四 | 移动障碍物是否需要预测位置避障 | 6 个组合均无碰撞且成功率为 100%；预测法并非在所有速度下都具有更大净距离 | 固定 1 s 预测时域的收益与障碍物速度和相遇时机有关，预测参数需要与场景匹配 |
@@ -25,628 +25,184 @@
 
 ### 2.1 无人机编队
 
-系统包含 5 架无人机，其中 0 号机为领航者，1～4 号机为跟随者。相对领航者的三维楔形编队偏移为：
+系统包含 5 架无人机：0 号为领航者，1～4 号为跟随者。三维楔形编队偏移为：
 
-```math
-\begin{aligned}
-\boldsymbol{\delta}_0 &= \begin{bmatrix}0&0&0\end{bmatrix}^{\mathrm{T}}, \\
-\boldsymbol{\delta}_1 &= \begin{bmatrix}-5& 3& 2\end{bmatrix}^{\mathrm{T}}, \\
-\boldsymbol{\delta}_2 &= \begin{bmatrix}-5&-3& 2\end{bmatrix}^{\mathrm{T}}, \\
-\boldsymbol{\delta}_3 &= \begin{bmatrix}-5& 3&-2\end{bmatrix}^{\mathrm{T}}, \\
-\boldsymbol{\delta}_4 &= \begin{bmatrix}-5&-3&-2\end{bmatrix}^{\mathrm{T}}.
-\end{aligned}
+```text
+leader = [ 0,  0,  0]
+uav1   = [-5,  3,  2]
+uav2   = [-5, -3,  2]
+uav3   = [-5,  3, -2]
+uav4   = [-5, -3, -2]
 ```
 
-其中，$\boldsymbol{\delta}_i$ 是第 $i$ 架无人机在领航者机体系下的期望相对位置；$\boldsymbol{\delta}_0$ 为零向量，表示 0 号领航者位于编队参考点。
-
-领航者初始位置和目标位置分别为：
-
-```math
-\mathbf{p}_L(0)=\begin{bmatrix}0&0&12\end{bmatrix}^{\mathrm{T}}\ \mathrm{m},
-\qquad
-\mathbf{p}_g=\begin{bmatrix}50&0&12\end{bmatrix}^{\mathrm{T}}\ \mathrm{m}.
-```
-
-跟随者从各自期望编队位置附近随机初始化。所有批量对比都使用固定随机种子，并确保同一对比中的不同方法采用完全相同的初始条件。
+领航者初始位置为 `[0, 0, 12]`，目标点为 `[50, 0, 12]`。跟随者在各自期望位置附近随机初始化。对比实验使用相同随机种子，保证不同方法的初始条件一致。
 
 ### 2.2 一阶运动学模型
 
-对第 $i$ 架无人机，离散时间位置更新为：
+位置更新公式为：
 
-```math
-\mathbf{p}_i^{k+1}=\mathbf{p}_i^k+\mathbf{v}_i^k\Delta t
-```
+$$p_{k+1}=p_k+v_k\Delta t$$
 
-速度先按照速度命令进行一阶平滑：
+速度采用平滑更新：
 
-```math
-\widetilde{\mathbf{v}}_i^{k+1}
-=(1-\alpha)\mathbf{v}_i^k+\alpha\mathbf{v}_{\mathrm{cmd},i}^k.
-```
+$$v_{k+1}=(1-\alpha)v_k+\alpha v_{cmd,k}$$
 
-这里，$k$ 表示离散仿真步，$\Delta t$ 为时间步长；$\mathbf{p}_i^k$ 和 $\mathbf{v}_i^k$ 分别表示当前位置和速度；$\mathbf{v}_{\mathrm{cmd},i}^k$ 是控制器生成的期望速度；$\alpha\in(0,1]$ 是速度平滑系数。$\widetilde{\mathbf{v}}_i^{k+1}$ 表示尚未限幅的平滑速度。
+其中，$p_k$ 是当前位置，$v_k$ 是当前速度，$v_{cmd,k}$ 是控制器给出的期望速度，$\Delta t$ 是仿真步长，$\alpha$ 是速度平滑系数。
 
-速度采用**整体等比例缩放**的方式限幅。设平滑后、限幅前的速度为
-向量 $\widetilde{\mathbf{v}}_i^{k+1}$，最终使用的速度为 $\mathbf{v}_i^{k+1}$：
+如果速度大小超过最大值，则按比例缩短整根速度向量：
 
-```math
-\mathbf{v}_i^{k+1}=\begin{cases}
-\widetilde{\mathbf{v}}_i^{k+1},
-& \left\|\widetilde{\mathbf{v}}_i^{k+1}\right\|\leq v_{\max}, \\
-v_{\max}\dfrac{\widetilde{\mathbf{v}}_i^{k+1}}
-{\left\|\widetilde{\mathbf{v}}_i^{k+1}\right\|},
-& \left\|\widetilde{\mathbf{v}}_i^{k+1}\right\|>v_{\max}.
-\end{cases}
-```
+$$v\leftarrow\frac{v}{|v|}v_{max}$$
 
-直观地说：速度没有超限时保持不变；速度超限时，只把整根速度向量“缩短”到
-$v_{\max}$，方向不变，而不是分别截断 $x$、$y$、$z$ 三个分量。例如：
+这种限幅方式只改变速度大小，不改变飞行方向。例如，速度 `[3, 4, 0] m/s` 的大小为 `5 m/s`；当最大速度为 `3 m/s` 时，限幅结果为 `[1.8, 2.4, 0] m/s`。
 
-```math
-\widetilde{\mathbf{v}}
-=\begin{bmatrix}3&4&0\end{bmatrix}^{\mathrm{T}}\ \mathrm{m}/\mathrm{s},
-\qquad
-\left\|\widetilde{\mathbf{v}}\right\|=5\ \mathrm{m}/\mathrm{s}.
-```
-
-当 $v_{\max}=3\ \mathrm{m}/\mathrm{s}$ 时：
-
-```math
-\mathbf{v}
-=3\frac{\begin{bmatrix}3&4&0\end{bmatrix}^{\mathrm{T}}}{5}
-=\begin{bmatrix}1.8&2.4&0\end{bmatrix}^{\mathrm{T}}\ \mathrm{m}/\mathrm{s},
-\qquad \|\mathbf{v}\|=3\ \mathrm{m}/\mathrm{s}.
-```
-
-因此，限幅后的运动方向与限幅前完全相同。
-
-默认时间步长为 $\Delta t=0.05\ \mathrm{s}$，最大速度为 $v_{\max}=3.0\ \mathrm{m}/\mathrm{s}$。编队形成、避障和逃逸全部通过生成期望速度完成，没有直接修改无人机位置。
+默认参数为 $\Delta t=0.05\,s$、$v_{max}=3.0\,m/s$。位置和速度更新不使用旋翼推力。
 
 ### 2.3 编队控制
 
-领航者使用目标吸引项：
+领航者朝目标点飞行：
 
-```math
-\mathbf{F}_{\mathrm{goal}}
-=k_{\mathrm{goal}}\left(\mathbf{p}_g-\mathbf{p}_L\right)
-```
+$$v_{leader}=k_{goal}(p_{goal}-p_{leader})$$
 
-其中，$\mathbf{p}_g$ 是目标点，$\mathbf{p}_L$ 是领航者当前位置，$k_{\mathrm{goal}}>0$ 是目标吸引增益。该项的方向始终由领航者指向目标点。
+根据领航者水平速度计算航向角：
 
-领航者的水平航向角由当前速度计算：
+$$yaw=atan2(v_y,v_x)$$
 
-```math
-\psi_L=\begin{cases}
-\mathrm{atan2}(v_{L,y},v_{L,x}),
-& \sqrt{v_{L,x}^2+v_{L,y}^2}>\varepsilon_v,\\
-\psi_{L,\mathrm{last}},
-& \sqrt{v_{L,x}^2+v_{L,y}^2}\leq\varepsilon_v.
-\end{cases}
-```
+如果领航者水平速度很小，则继续使用上一个有效航向角，避免航向突然变成 0。
 
-水平速度过小时保留上一个有效航向 $\psi_{L,\mathrm{last}}$，避免航向被突然重置为零。绕世界 $z$ 轴的旋转矩阵为：
+跟随者的期望位置为：
 
-```math
-\mathbf{R}_z(\psi)=
-\begin{bmatrix}
-\cos\psi&-\sin\psi&0\\
-\sin\psi& \cos\psi&0\\
-0&0&1
-\end{bmatrix}.
-```
+$$p_{desired}=p_{leader}+R_z(yaw)\,offset$$
 
-跟随者的期望位置由领航者航向和编队偏移共同确定：
+这里，$R_z(yaw)$ 表示绕 z 轴旋转，`offset` 是固定的编队偏移。跟随者速度命令为：
 
-```math
-\mathbf{p}_{i,\mathrm{des}}
-=\mathbf{p}_L+\mathbf{R}_z(\psi_L)\boldsymbol{\delta}_i,
-\qquad i=1,2,3,4.
-```
+$$v_{follower}=k_{form}(p_{desired}-p)+k_{vel}(v_{leader}-v)$$
 
-该式先将固定楔形偏移 $\boldsymbol{\delta}_i$ 按领航者航向旋转，再平移到领航者当前位置，因此整个编队会随领航者转向。
+第一项用于修正编队位置误差，第二项用于匹配领航者速度。所有速度命令最后都要执行速度限幅和平滑更新。
 
-其编队控制由位置误差和速度匹配组成：
+### 2.4 姿态与旋翼动画
 
-```math
-\mathbf{F}_{\mathrm{form},i}
-=k_{\mathrm{form}}\left(\mathbf{p}_{i,\mathrm{des}}-\mathbf{p}_i\right),
-```
+姿态只用于表现飞行趋势，不建立真实姿态动力学。首先根据速度命令计算显示用的近似期望加速度：
 
-```math
-\mathbf{F}_{\mathrm{vel},i}
-=k_{\mathrm{vel}}\left(\mathbf{v}_L-\mathbf{v}_i\right).
-```
+$$a_{des}=\frac{v_{cmd}-v}{\tau_v}$$
 
-其中，$\mathbf{F}_{\mathrm{form},i}$ 用于消除位置编队误差，$\mathbf{F}_{\mathrm{vel},i}$ 用于让跟随者速度趋近领航者速度。在无障碍实验中：
+将水平加速度旋转到机体坐标系后，使用下面的简单关系计算期望姿态：
 
-```math
-\mathbf{v}_{\mathrm{cmd},L}=\mathbf{F}_{\mathrm{goal}},
-\qquad
-\mathbf{v}_{\mathrm{cmd},i}
-=\mathbf{F}_{\mathrm{form},i}+\mathbf{F}_{\mathrm{vel},i}.
-```
+$$pitch_{des}=clip(a_{body,x}/g)$$
 
-以上速度命令在使用前仍需经过前述向量模长限幅。
+$$roll_{des}=clip(-a_{body,y}/g)$$
 
-当领航者水平速度接近零时，系统保留上一个有效航向角，避免编队方向突然重置。
+`clip` 表示把横滚角和俯仰角限制在 ±25°。实际显示姿态采用平滑跟随，例如：
 
-### 2.4 姿态与旋翼可视化
+$$roll\leftarrow roll+\beta_{rp}(roll_{des}-roll)$$
 
-程序首先根据速度命令与当前速度之差，构造仅用于显示的近似期望加速度：
+俯仰角采用相同方式更新。偏航角更新前会把角度误差限制在 $[-\pi,\pi]$，避免跨越 ±180° 时发生反向大角度旋转。
 
-```math
-\mathbf{a}_{\mathrm{des},i}
-=\frac{\mathbf{v}_{\mathrm{cmd},i}-\mathbf{v}_i}{\tau_v}
-```
+视觉旋翼基础转速为：
 
-其中，$\tau_v$ 是速度响应显示时间常数。该加速度不是由质量和推力方程计算得到的真实加速度。
+$$\omega_{base}=\omega_{hover}+k_zv_{cmd,z}$$
 
-期望偏航角优先采用当前平滑速度的水平方向：
+旋翼相位更新为：
 
-```math
-\psi_{\mathrm{des},i}=\begin{cases}
-\mathrm{atan2}(v_{i,y},v_{i,x}),
-& \sqrt{v_{i,x}^2+v_{i,y}^2}>\varepsilon_v,\\
-\psi_{i,\mathrm{last}},
-& \sqrt{v_{i,x}^2+v_{i,y}^2}\leq\varepsilon_v.
-\end{cases}
-```
+$$phase\leftarrow(phase+direction\cdot\omega\Delta t)\bmod 2\pi$$
 
-为了根据无人机自身朝向解释水平加速度，将期望加速度旋转到机体坐标系：
+相邻旋翼的 `direction` 符号相反，因此动画中相邻旋翼反向转动。视觉转速和旋翼相位不会影响无人机轨迹。
 
-```math
-\mathbf{a}_{b,i}=\mathbf{R}_z(-\psi_{\mathrm{des},i})\mathbf{a}_{\mathrm{des},i}
-=\begin{bmatrix}a_{b,x}&a_{b,y}&a_{b,z}\end{bmatrix}^{\mathrm{T}}.
-```
-
-期望俯仰角 $\theta_{\mathrm{des}}$ 和期望横滚角 $\phi_{\mathrm{des}}$ 为：
-
-```math
-\theta_{\mathrm{des}}
-=\mathrm{clip}\left(\frac{a_{b,x}}{g},-\theta_{\max},\theta_{\max}\right)
-```
-
-```math
-\phi_{\mathrm{des}}
-=\mathrm{clip}\left(-\frac{a_{b,y}}{g},-\phi_{\max},\phi_{\max}\right)
-```
-
-这里，$g=9.81\ \mathrm{m}/\mathrm{s}^{2}$；$\mathrm{clip}(x,a,b)$ 表示把 $x$ 限制在区间 $[a,b]$；$\phi_{\max}=\theta_{\max}=25^\circ$。正向机体加速度表现为俯仰，横向机体加速度表现为横滚。
-
-姿态采用一阶平滑跟随：
-
-```math
-\begin{aligned}
-\phi_i^{k+1}
-&=\phi_i^k+\beta_{rp}\left(\phi_{\mathrm{des},i}-\phi_i^k\right),\\
-\theta_i^{k+1}
-&=\theta_i^k+\beta_{rp}\left(\theta_{\mathrm{des},i}-\theta_i^k\right),\\
-\psi_i^{k+1}
-&=\psi_i^k+\beta_{\mathrm{yaw}}
-\mathrm{wrapToPi}\left(\psi_{\mathrm{des},i}-\psi_i^k\right).
-\end{aligned}
-```
-
-角度环绕函数定义为：
-
-```math
-\mathrm{wrapToPi}(\gamma)
-=\left((\gamma+\pi)\bmod 2\pi\right)-\pi
-```
-
-它把偏航误差限制在 $[-\pi,\pi)$，使无人机始终沿较短方向转动。例如，当前偏航为 $179^\circ$、期望偏航为 $-179^\circ$ 时，实际误差会被处理为 $2^\circ$，而不是 $-358^\circ$。
-
-视觉旋翼的基础转速为：
-
-```math
-\omega_{\mathrm{base}}
-=\omega_{\mathrm{hover}}+k_{\omega z}v_{\mathrm{cmd},z}.
-```
-
-令横滚和俯仰显示误差分别为
-$e_\phi=\phi_{\mathrm{des}}-\phi$、
-$e_\theta=\theta_{\mathrm{des}}-\theta$。四个 X 形机臂按照“前左、后左、后右、前右”排列，其视觉混控向量为：
-
-```math
-\mathbf{m}_\phi=\begin{bmatrix}-1&-1&1&1\end{bmatrix}^{\mathrm{T}},
-\qquad
-\mathbf{m}_\theta=\begin{bmatrix}-1&1&1&-1\end{bmatrix}^{\mathrm{T}}.
-```
-
-四个旋翼的视觉转速为：
-
-```math
-\boldsymbol{\omega}
-=\mathrm{clip}\left[
-\omega_{\mathrm{base}}\mathbf{1}_4
-+k_{\mathrm{vis}}\left(e_\phi\mathbf{m}_\phi+e_\theta\mathbf{m}_\theta\right),
-\omega_{\min},\omega_{\max}
-\right].
-```
-
-相邻旋翼使用相反旋转方向：
-
-```math
-\mathbf{s}=\begin{bmatrix}1&-1&1&-1\end{bmatrix}^{\mathrm{T}}.
-```
-
-第 $j$ 个旋翼的动画相位更新为：
-
-```math
-q_j^{k+1}=\left(q_j^k+s_j\omega_j^k\Delta t\right)\bmod 2\pi
-```
-
-对 $2\pi$ 取模可以防止相位数值无限增大。上述旋翼混控只服务于动画效果，不产生推力，也不参与无人机的位置、速度或姿态更新。
-
-绘制机体时，局部坐标点 $\mathbf{r}_b$ 通过欧拉角旋转到世界坐标系：
-
-```math
-\mathbf{r}_w=\mathbf{p}_i+\mathbf{R}\mathbf{r}_b,
-\qquad
-\mathbf{R}=\mathbf{R}_z(\psi)\mathbf{R}_y(\theta)\mathbf{R}_x(\phi)
-```
-
-其中：
-
-```math
-\mathbf{R}_x(\phi)=
-\begin{bmatrix}
-1&0&0\\
-0&\cos\phi&-\sin\phi\\
-0&\sin\phi&\cos\phi
-\end{bmatrix},
-```
-
-```math
-\mathbf{R}_y(\theta)=
-\begin{bmatrix}
-\cos\theta&0&\sin\theta\\
-0&1&0\\
--\sin\theta&0&\cos\theta
-\end{bmatrix},
-```
-
-```math
-\mathbf{R}_z(\psi)=
-\begin{bmatrix}
-\cos\psi&-\sin\psi&0\\
-\sin\psi&\cos\psi&0\\
-0&0&1
-\end{bmatrix}.
-```
-
-$\phi$、$\theta$、$\psi$ 分别是横滚角、俯仰角和偏航角。该旋转只用于把机臂和旋翼从机体局部坐标变换到世界坐标，从而在动画中显示机体倾斜。
-
-## 三、算法设计
+## 三、避障与改进算法
 
 ### 3.1 静态障碍物人工势场
 
-设第 $i$ 架无人机位置为 $\mathbf{p}_i$，第 $j$ 个球形障碍物中心为 $\mathbf{c}_j$、半径为 $r_j$，无人机等效半径为 $r_u$。无人机中心到障碍物中心的距离为：
+无人机到球形障碍物表面的净距离为：
 
-```math
-d_{ij}=\left\|\mathbf{p}_i-\mathbf{c}_j\right\|.
-```
+$$\rho=|p-c|-r_{obs}-r_{uav}$$
 
-无人机外表面到障碍物外表面的净距离为：
+其中，$p$ 是无人机位置，$c$ 是障碍物中心，$r_{obs}$ 是障碍物半径，$r_{uav}$ 是无人机等效半径。
 
-```math
-\rho_{ij}=d_{ij}-r_j-r_u
-```
+从障碍物中心指向无人机的方向为：
 
-因此，$\rho_{ij}>0$ 表示二者仍有间隙，$\rho_{ij}=0$ 表示刚好接触，$\rho_{ij}<0$ 表示发生几何重叠。背离障碍物的径向单位向量为：
+$$direction=\frac{p-c}{|p-c|}$$
 
-```math
-\mathbf{n}_{ij}
-=\frac{\mathbf{p}_i-\mathbf{c}_j}
-{\max\left(d_{ij},\varepsilon\right)}.
-```
+当 $\rho$ 小于障碍物影响距离 $\rho_0$ 时，排斥项为：
 
-当无人机位于影响距离 $\rho_{0,j}$ 内时，障碍物排斥速度分量为：
+$$F_{obs}=k_{obs}\left(\frac{1}{\rho}-\frac{1}{\rho_0}\right)\frac{1}{\rho^2}\,direction$$
 
-```math
-\mathbf{F}_{\mathrm{obs},ij}=\begin{cases}
-k_{\mathrm{obs}}
-\left(\dfrac{1}{\rho_{ij}^{\ast}}-\dfrac{1}{\rho_{0,j}}\right)
-\dfrac{1}{\left(\rho_{ij}^{\ast}\right)^2}\mathbf{n}_{ij},
-& \rho_{ij}<\rho_{0,j},\\
-\mathbf{0}_{3\times1},
-& \rho_{ij}\geq\rho_{0,j},
-\end{cases}
-```
-
-其中：
-
-```math
-\rho_{ij}^{\ast}=\max(\rho_{ij},\varepsilon).
-```
-
-$k_{\mathrm{obs}}>0$ 是障碍物排斥增益，$\varepsilon>0$ 是防止除零的最小距离。由于 $\mathbf{n}_{ij}$ 从障碍物中心指向无人机，所以排斥方向一定背离障碍物。对于多个障碍物，先求和再进行合力模长限幅：
-
-```math
-\mathbf{F}_{\mathrm{obs},i}
-=\mathrm{limitNorm}\left(
-\sum_j\mathbf{F}_{\mathrm{obs},ij},
-F_{\mathrm{obs},\max}
-\right).
-```
-
-若无人机恰好位于障碍物球心，径向方向无法由几何关系定义，代码会根据无人机和障碍物编号生成确定性单位向量，避免随机性、除零和 NaN。
+当 $\rho\geq\rho_0$ 时，$F_{obs}=0$。程序对分母设置了最小值，并限制排斥项的最大大小，防止除零或产生过大的速度命令。多个障碍物的排斥项可以直接相加。
 
 ### 3.2 无人机间防碰撞
 
-第 $i$、$j$ 架无人机之间的中心距离和从 $j$ 指向 $i$ 的单位向量为：
+当两架无人机的距离 $d$ 小于安全距离 $d_{safe}$ 时，机间排斥项为：
 
-```math
-d_{ij}=\left\|\mathbf{p}_i-\mathbf{p}_j\right\|,
-\qquad
-\mathbf{n}_{ij}=\frac{\mathbf{p}_i-\mathbf{p}_j}{\max(d_{ij},\varepsilon)}.
-```
+$$F_{sep}=k_{sep}\left(\frac{1}{d}-\frac{1}{d_{safe}}\right)\frac{1}{d^2}\,direction$$
 
-当 $d_{ij}$ 小于安全距离 $d_{\mathrm{safe}}$ 时，施加机间排斥项：
+当两架无人机完全重合时，程序根据无人机编号选择固定分离方向，不使用随机方向。
 
-```math
-\mathbf{F}_{\mathrm{sep},ij}=\begin{cases}
-k_{\mathrm{sep}}
-\left(\dfrac{1}{d_{ij}^{\ast}}-\dfrac{1}{d_{\mathrm{safe}}}\right)
-\dfrac{1}{(d_{ij}^{\ast})^2}\mathbf{n}_{ij},
-& d_{ij}<d_{\mathrm{safe}},\\
-\mathbf{0}_{3\times1},
-& d_{ij}\geq d_{\mathrm{safe}},
-\end{cases}
-```
+加入避障后，领航者速度命令为：
 
-其中 $d_{ij}^{\ast}=\max(d_{ij},\varepsilon)$。同一无人机对只计算一次，并按照
-$\mathbf{F}_{\mathrm{sep},ji}=-\mathbf{F}_{\mathrm{sep},ij}$
-施加大小相等、方向相反的分离项。若两机位置完全重合，则依据无人机编号生成确定性分离方向，不使用随机方向，因此不会产生 NaN，结果保持可复现。
+$$v_{leader}=F_{goal}+F_{obs}+F_{sep}$$
 
-每架无人机收到的总分离项为：
+跟随者速度命令为：
 
-```math
-\mathbf{F}_{\mathrm{sep},i}
-=\mathrm{limitNorm}\left(
-\sum_{j\ne i}\mathbf{F}_{\mathrm{sep},ij},
-F_{\mathrm{sep},\max}
-\right).
-```
+$$v_{follower}=F_{form}+F_{vel}+F_{obs}+F_{sep}$$
 
-加入避障后的完整速度命令为：
+人工势场只生成期望速度，不会直接修改位置，也不会转换成真实旋翼推力。
 
-```math
-\mathbf{v}_{\mathrm{cmd},L}
-=\mathbf{F}_{\mathrm{goal},L}
-+\mathbf{F}_{\mathrm{obs},L}
-+\mathbf{F}_{\mathrm{sep},L}
-```
+障碍物碰撞条件为无人机中心距离小于两者半径之和；无人机碰撞条件为两机距离小于两倍无人机半径。同一次连续接触只记录一次。
 
-```math
-\mathbf{v}_{\mathrm{cmd},i}
-=\mathbf{F}_{\mathrm{form},i}
-+\mathbf{F}_{\mathrm{vel},i}
-+\mathbf{F}_{\mathrm{obs},i}
-+\mathbf{F}_{\mathrm{sep},i},
-\quad i=1,2,3,4
-```
+### 3.3 局部极小与切向逃逸
 
-所有控制分量相加后，仍按 $v_{\max}$ 对速度命令整体限幅，再进入速度平滑环节。
+系统保存最近 20 步的速度和任务距离。只有以下条件连续满足若干步，才认为无人机可能陷入局部极小：
 
-实验二将机间排斥触发距离设为 $d_{\mathrm{safe}}=4.0\ \mathrm{m}$。原因是楔形编队自然最小间距约为 $2.95\ \mathrm{m}$，若沿用建议值 $2.0\ \mathrm{m}$，正常实验中机间排斥几乎不会触发，无法观察对比效果。实际碰撞判据仍为两机距离小于 $2r_u=0.6\ \mathrm{m}$。
-
-障碍物碰撞与机间碰撞的几何判据分别为：
-
-```math
-\left\|\mathbf{p}_i-\mathbf{c}_j\right\|<r_j+r_u,
-```
-
-```math
-\left\|\mathbf{p}_i-\mathbf{p}_j\right\|<2r_u.
-```
-
-同一次连续接触只计数一次，并且无人机对 $(i,j)$ 与 $(j,i)$ 被视为同一对。
-
-### 3.3 局部极小检测与切向逃逸
-
-实验三为每架无人机保存最近 20 步的速度和任务距离。只有以下条件连续满足若干步，才判定可能进入局部极小：
-
-1. 任务距离 $D_i^k>2\ \mathrm{m}$；
-2. 当前速度 $\|\mathbf{v}_i^k\|<0.15\ \mathrm{m}/\mathrm{s}$；
+1. 到目标或期望位置的距离大于 2 m；
+2. 当前速度小于 0.15 m/s；
 3. 附近存在处于影响范围内的障碍物；
-4. 最近 20 步的距离改善量满足 $D_i^{k-19}-D_i^k<0.05\ \mathrm{m}$。
+4. 最近 20 步的距离改善小于 0.05 m。
 
-其中，领航者的任务距离为：
+进入逃逸状态后，先计算从障碍物指向无人机的径向单位向量：
 
-```math
-D_L^k=\left\|\mathbf{p}_g-\mathbf{p}_L^k\right\|,
-```
+$$n=\frac{p-c}{|p-c|}$$
 
-跟随者的任务距离为：
+再通过叉乘获得切向方向并归一化：
 
-```math
-D_i^k=\left\|\mathbf{p}_{i,\mathrm{des}}^k-\mathbf{p}_i^k\right\|.
-```
+$$t=normalize(n\times[0,0,1])$$
 
-“改善量”比较的是长度为 20 的历史窗口首尾距离，而不是只观察单步速度；四项条件还必须连续满足设定步数才会触发逃逸。
+切向逃逸项为：
 
-进入逃逸状态后，程序在最近障碍物的径向方向上构造单位切向量：
+$$F_{escape}=k_{escape}t$$
 
-```math
-\mathbf{n}_i
-=\frac{\mathbf{p}_i-\mathbf{c}_{\mathrm{near}}}
-{\left\|\mathbf{p}_i-\mathbf{c}_{\mathrm{near}}\right\|},
-```
-
-```math
-\widetilde{\mathbf{t}}_i
-=\mathbf{n}_i\times\begin{bmatrix}0&0&1\end{bmatrix}^{\mathrm{T}},
-\qquad
-\mathbf{t}_i
-=\frac{\widetilde{\mathbf{t}}_i}{\left\|\widetilde{\mathbf{t}}_i\right\|},
-```
-
-```math
-\mathbf{F}_{\mathrm{escape},i}=k_{\mathrm{escape}}\mathbf{t}_i
-```
-
-由于 $\|\mathbf{t}_i\|=1$，逃逸力模长为 $k_{\mathrm{escape}}$。叉乘保证 $\mathbf{t}_i\perp\mathbf{n}_i$，因此逃逸项沿障碍物切向推动无人机，而不是继续与径向排斥力对抗。
-
-当 $\|\widetilde{\mathbf{t}}_i\|$ 过小时，改用 $\mathbf{n}_i\times[1,0,0]^{\mathrm{T}}$ 构造切向量。绕行符号由无人机编号和领航者方向确定，保证编队成员不会随机选择相反方向。改进方法只是在原速度命令中加入：
-
-```math
-\mathbf{v}_{\mathrm{cmd},i}^{\mathrm{improved}}
-=\mathbf{v}_{\mathrm{cmd},i}^{\mathrm{standard}}
-+\mathbf{F}_{\mathrm{escape},i}.
-```
-
-非逃逸状态下定义 $\mathbf{F}_{\mathrm{escape},i}=\mathbf{0}$，因此此时改进方法不会额外改变速度命令；关闭改进功能时，逃逸项始终为零。
-
-逃逸仍然只改变期望速度，姿态继续经过原有平滑模型更新。
-
-为稳定复现多障碍物下的局部极小，实验三使用 $k_{\mathrm{obs}}=20.0$、$F_{\mathrm{obs},\max}=8.0$ 和零初始速度。最终参数均写在 `config.py` 中，程序不会根据实验结果临时改变参数。
+如果叉乘结果过小，则改用 `[1, 0, 0]` 作为参考轴。绕行方向由无人机编号和领航者方向确定，保证结果可复现。逃逸项仍然只加入速度命令，不会让无人机瞬移。
 
 ### 3.4 移动障碍物预测避障
 
-移动球形障碍物按真实速度更新：
+移动障碍物真实位置按恒定速度更新：
 
-```math
-\mathbf{c}_j^{k+1}=\mathbf{c}_j^k+\mathbf{v}_{o,j}\Delta t
-```
+$$c_{k+1}=c_k+v_{obs}\Delta t$$
 
-其中，$\mathbf{c}_j^k$ 是第 $j$ 个移动障碍物的真实中心，$\mathbf{v}_{o,j}$ 是其恒定速度。控制器使用的障碍物中心为：
+当前位置方法直接使用 $c_k$ 计算排斥项。预测方法使用：
 
-```math
-\widehat{\mathbf{c}}_j^k=\begin{cases}
-\mathbf{c}_j^k,
-& \text{当前位置方法},\\
-\mathbf{c}_j^k+T_p\mathbf{v}_{o,j},
-& \text{预测位置方法}.
-\end{cases}
-```
+$$c_{pred}=c_k+T_{pred}v_{obs}$$
 
-其中，$T_p=1.0\ \mathrm{s}$ 是预测时域。人工势场公式中的障碍物中心 $\mathbf{c}_j$ 会被替换为控制中心 $\widehat{\mathbf{c}}_j^k$，但它只参与排斥速度计算，不会写回真实障碍物状态。
+其中，默认预测时间 $T_{pred}=1.0\,s$。预测位置只参与避障控制，障碍物真实轨迹不变；碰撞检测始终使用真实位置 $c_k$。
 
-碰撞检测始终使用真实中心 $\mathbf{c}_j^{k+1}$：
+### 3.5 评价指标说明
 
-```math
-\left\|\mathbf{p}_i^{k+1}-\mathbf{c}_j^{k+1}\right\|<r_j+r_u.
-```
+编队误差是跟随者当前位置与期望编队位置之间的距离。飞行距离通过累加相邻时刻的位置变化得到。最小障碍物净距离表示无人机外表面与障碍物外表面的最小间隙；负值表示发生重叠。
 
-因此，预测功能只能改变无人机控制反应，不能修改移动障碍物的真实运动轨迹或碰撞判定位置。
+实验成功需要同时满足：在最大时间内到达目标、没有发生障碍物碰撞、没有发生无人机碰撞，并且最终平均编队误差小于 1 m。
 
-### 3.5 评价指标计算
+实验四的编队恢复时间定义为：离开移动障碍物影响区域后，平均编队误差重新小于 0.8 m，并连续保持 2 s。若仿真结束仍未恢复，则在结果中保存为 `NaN`。
 
-设某项指标的有效评价区间包含 $N+1$ 个时刻（$k=0,1,\ldots,N$），共有 $n_f=4$ 架跟随者和 $n_u=5$ 架无人机。实验四可能在任务完成后继续记录一段恢复过程；其任务误差和航程统计在完成时刻截断，而安全距离和恢复时间仍使用相应的完整记录区间。
 
-第 $i$ 架跟随者在第 $k$ 步的编队误差为：
-
-```math
-e_i^k=\left\|\mathbf{p}_i^k-\mathbf{p}_{i,\mathrm{des}}^k\right\|,
-\qquad i=1,2,3,4.
-```
-
-该时刻的平均编队误差为：
-
-```math
-\bar e^k=\frac{1}{n_f}\sum_{i=1}^{n_f}e_i^k.
-```
-
-全过程平均误差、最大误差和最终平均误差分别为：
-
-```math
-e_{\mathrm{mean}}
-=\frac{1}{(N+1)n_f}\sum_{k=0}^{N}\sum_{i=1}^{n_f}e_i^k,
-```
-
-```math
-e_{\max}=\max_{\substack{0\leq k\leq N\\1\leq i\leq n_f}}e_i^k,
-\qquad
-e_{\mathrm{final}}=\bar e^N.
-```
-
-第 $i$ 架无人机的飞行距离以及集群总飞行距离为：
-
-```math
-L_i=\sum_{k=1}^{N}\left\|\mathbf{p}_i^k-\mathbf{p}_i^{k-1}\right\|,
-\qquad
-L_{\mathrm{total}}=\sum_{i=0}^{n_u-1}L_i.
-```
-
-全过程最小障碍物表面净距离为：
-
-```math
-\rho_{\min}
-=\min_{k,i,j}
-\left(
-\left\|\mathbf{p}_i^k-\mathbf{c}_j^k\right\|-r_j-r_u
-\right).
-```
-
-全过程最小机间距离为：
-
-```math
-d_{\min}
-=\min_{k,\,i<j}\left\|\mathbf{p}_i^k-\mathbf{p}_j^k\right\|.
-```
-
-姿态变化均方根使用横滚、俯仰、偏航三个角速度样本共同计算。令
-$\boldsymbol{\eta}_i^k=[\phi_i^k,\theta_i^k,\psi_i^k]^{\mathrm{T}}$，则：
-
-```math
-\mathrm{RMS}_{\mathrm{att}}
-=\frac{180}{\pi}
-\sqrt{
-\frac{1}{3n_uN}
-\sum_{k=1}^{N}\sum_{i=0}^{n_u-1}
-\left\|
-\frac{\boldsymbol{\eta}_i^k-\boldsymbol{\eta}_i^{k-1}}{\Delta t}
-\right\|^2
-}.
-```
-
-其单位为 $^\circ/\mathrm{s}$。领航者到达目标且编队完成的判断为：
-
-```math
-\left\|\mathbf{p}_L^k-\mathbf{p}_g\right\|\leq1\ \mathrm{m},
-\qquad
-\bar e^k<1\ \mathrm{m}.
-```
-
-实验三和实验四的单次运行成功条件进一步要求：
-
-```math
-\mathrm{success}
-=\mathrm{completed}
-\land(N_{\mathrm{obs}}=0)
-\land(N_{\mathrm{uav}}=0)
-\land(e_{\mathrm{final}}<1\ \mathrm{m})
-```
-
-其中，$N_{\mathrm{obs}}$ 和 $N_{\mathrm{uav}}$ 分别是经连续接触去重后的障碍物碰撞次数和无人机碰撞次数。
-
-实验四的编队恢复时间从动态障碍物影响阶段结束时刻 $t_{\mathrm{end}}$ 开始计算。设
-$H=\lceil2/\Delta t\rceil$，第一个满足下式的时刻 $t_k$ 为恢复确认时刻：
-
-```math
-\bar e^{k-H+1},\bar e^{k-H+2},\ldots,\bar e^k<0.8\ \mathrm{m}.
-```
-
-于是：
-
-```math
-t_{\mathrm{recovery}}=t_k-t_{\mathrm{end}}.
-```
-
-若仿真结束仍找不到满足条件的 $t_k$，则恢复时间记为 `NaN`。
 
 ## 四、实验结果与分析
 
 ### 4.1 实验一：无障碍三维编队形成与保持
 
-| $k_{\mathrm{form}}$ | 到达目标 | 完成时间/s | 全过程平均编队误差/m | 最大误差/m | 最终误差/m | 集群总航程/m | 最大横滚角/° | 最大俯仰角/° |
+| k_form | 到达目标 | 完成时间/s | 全过程平均编队误差/m | 最大误差/m | 最终误差/m | 集群总航程/m | 最大横滚角/° | 最大俯仰角/° |
 |---:|:---:|---:|---:|---:|---:|---:|---:|---:|
 | 0.3 | 是 | 26.75 | 6.055 | 9.737 | 0.991 | 244.358 | 1.882 | 11.184 |
 | 0.6 | 是 | 20.65 | 3.947 | 4.998 | 0.985 | 244.577 | 3.127 | 11.184 |
 | 1.0 | 是 | 18.35 | 2.662 | 3.000 | 0.990 | 242.908 | 5.009 | 11.184 |
 
-结果表明，三组参数均满足领航者到达目标、最终平均编队误差小于 1 m、速度不超过 $3\ \mathrm{m}/\mathrm{s}$ 和姿态不越界等要求。随着 $k_{\mathrm{form}}$ 增大，跟随者更快修正初始偏差，任务完成时间和全过程误差下降，但最大横滚角与姿态变化程度增大。
+结果表明，三组参数均满足领航者到达目标、最终平均编队误差小于 1 m、速度不超过 3 m/s 和姿态不越界等要求。随着 `k_form` 增大，跟随者更快修正初始偏差，任务完成时间和全过程误差下降，但最大横滚角与姿态变化程度增大。
 
 全过程平均误差明显高于最终误差，是因为统计包含了初始随机偏差和编队形成阶段；它不能被解释为稳态误差。
 
@@ -660,9 +216,9 @@ t_{\mathrm{recovery}}=t_k-t_{\mathrm{end}}.
 | B：仅障碍物 APF | 是 | 37.65 | 3.723 | 15.638 | 1.049 | 2.948 | 0 | 304.190 |
 | C：APF + 机间防碰撞 | 是 | 37.60 | 3.727 | 15.638 | 1.049 | 2.973 | 0 | 304.150 |
 
-无避障时，轨迹虽然仍能到达目标并恢复编队，但穿过障碍物，碰撞检测正确记录了 5 架无人机的连续接触事件。开启 APF 后，障碍物碰撞次数降为 0，最小表面净距离约为 $1.05\ \mathrm{m}$。
+无避障时，轨迹虽然仍能到达目标并恢复编队，但穿过障碍物，碰撞检测正确记录了 5 架无人机的连续接触事件。开启 APF 后，障碍物碰撞次数降为 0，最小表面净距离约为 1.05 m。
 
-加入机间防碰撞后，最小机间距离由 $2.948\ \mathrm{m}$ 提高到 $2.973\ \mathrm{m}$。提升幅度不大，是因为该初始编队本身没有接近实际碰撞阈值；它说明分离项在工作，但不应把这组结果夸大为显著提升。
+加入机间防碰撞后，最小机间距离由 2.948 m 提高到 2.973 m。提升幅度不大，是因为该初始编队本身没有接近实际碰撞阈值；它说明分离项在工作，但不应把这组结果夸大为显著提升。
 
 绕障使最大编队误差和总航程上升，这是安全性与队形紧凑性之间的正常权衡。
 
@@ -681,13 +237,13 @@ t_{\mathrm{recovery}}=t_k-t_{\mathrm{end}}.
 
 需要注意，标准 APF 的平均航程和平均编队误差看起来更小，并不代表其效果更好：9 个失败样本较早停滞，因而累计飞行距离和后续编队运动都更少。比较算法时必须同时查看成功率，不能孤立地看航程或平均误差。
 
-代表性随机种子 $\mathrm{seed}=42$ 中，标准方法运行至 $100\ \mathrm{s}$ 仍未完成；改进方法在 $43.55\ \mathrm{s}$ 完成，并触发 4 次局部极小检测和 4 次切向逃逸。
+代表性随机种子 `seed=42` 中，标准方法运行至 100 s 仍未完成；改进方法在 43.55 s 完成，并触发 4 次局部极小检测和 4 次切向逃逸。
 
 ![实验三成功率](results/experiment_3/success_rate.png)
 
 ### 4.4 实验四：移动障碍物当前位置与预测位置避障
 
-移动障碍物从 $[25,-12,12]^{\mathrm{T}}\ \mathrm{m}$ 出发，沿 $y$ 轴正方向横穿集群路径。分别测试 $0.5\ \mathrm{m}/\mathrm{s}$、$1.0\ \mathrm{m}/\mathrm{s}$ 和 $1.5\ \mathrm{m}/\mathrm{s}$；每种速度和方法组合使用相同的 5 个固定随机种子。
+移动障碍物从 `[25, -12, 12]` 出发，沿 y 轴正方向横穿集群路径。分别测试 0.5 m/s、1.0 m/s 和 1.5 m/s；每种速度和方法组合使用相同的 5 个固定随机种子。
 
 | 障碍物速度/(m/s) | 方法 | 成功率 | 平均完成时间/s | 平均最小净距离/m | 平均最大编队误差/m | 平均恢复时间/s | 平均总航程/m | 碰撞次数 |
 |---:|---|---:|---:|---:|---:|---:|---:|---:|
@@ -700,13 +256,13 @@ t_{\mathrm{recovery}}=t_k-t_{\mathrm{end}}.
 
 六组测试全部成功且没有碰撞。固定 1 s 预测时域的表现随移动速度变化：
 
-- 在 $0.5\ \mathrm{m}/\mathrm{s}$ 时，预测法将平均最小净距离从 $1.696\ \mathrm{m}$ 提高到 $1.899\ \mathrm{m}$；
-- 在 $1.0\ \mathrm{m}/\mathrm{s}$ 时，预测位置使无人机更早响应，但本场景中的后续交汇几何关系令实际最小净距离反而减小；
-- 在 $1.5\ \mathrm{m}/\mathrm{s}$ 时，预测法虽然没有取得更大的最小净距离，却缩短了完成时间和编队恢复时间，并降低了最大编队误差、总航程和姿态变化。
+- 在 0.5 m/s 时，预测法将平均最小净距离从 1.696 m 提高到 1.899 m；
+- 在 1.0 m/s 时，预测位置使无人机更早响应，但本场景中的后续交汇几何关系令实际最小净距离反而减小；
+- 在 1.5 m/s 时，预测法虽然没有取得更大的最小净距离，却缩短了完成时间和编队恢复时间，并降低了最大编队误差、总航程和姿态变化。
 
 因此，本实验支持的结论是“预测可能改善动态避障的提前性和恢复过程”，而不是“预测一定在所有指标上优于当前位置方法”。固定预测时域存在速度依赖，后续可研究自适应预测时间或基于相对速度的碰撞时间预测。
 
-编队恢复时间的数学定义见 3.5 节：避开移动障碍物后，平均编队误差重新小于 $0.8\ \mathrm{m}$，并连续保持 $2\ \mathrm{s}$。若到仿真结束仍不满足，CSV 中保存为 `NaN`，汇总中另行统计未恢复次数。本次 30 个批量样本均完成恢复。
+编队恢复时间的定义见 3.5 节：避开移动障碍物后，平均编队误差重新小于 0.8 m，并连续保持 2 s。若到仿真结束仍不满足，CSV 中保存为 `NaN`，汇总中另行统计未恢复次数。本次 30 个批量样本均完成恢复。
 
 ![实验四不同速度下的最小净距离](results/experiment_4/minimum_clearance_comparison.png)
 

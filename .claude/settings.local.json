@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh --version)",
+      "Bash(gh auth *)",
+      "Bash(curl -s -X POST https://api.github.com/markdown -H 'Content-Type: application/json' -d '{\"text\":\"inline $a^2+b^2$ test\\\\n\\\\n$$E=mc^2$$\\\\n\",\"mode\":\"gfm\"}')",
+      "Bash(curl -s -X POST https://api.github.com/markdown -H \"Content-Type: application/json\" -d '{\"text\":\"```math\\\\np_{k+1}=p_k+v_k\\\\\\\\Delta t\\\\n```\\\\n\",\"mode\":\"gfm\"}')",
+      "Bash(curl -s https://github.com/ZandUY/zhang666)",
+      "Bash(grep -o 'language-math[^$]\\\\{0,120\\\\}' C:/Users/ZandU/.claude/projects/D--Code-wurenjiqunxitong/cc1c3a00-f86d-408f-8ec8-a4047de6f263/tool-results/bqctwlxwr.txt)",
+      "Bash(grep -o '.\\\\{80\\\\}boldsymbol{.delta}_0.\\\\{0,160\\\\}' C:/Users/ZandU/.claude/projects/D--Code-wurenjiqunxitong/cc1c3a00-f86d-408f-8ec8-a4047de6f263/tool-results/bqctwlxwr.txt)",
+      "Bash(curl -s -H \"Accept: application/vnd.github.html+json\" https://api.github.com/repos/ZandUY/zhang666/readme -o /tmp/readme_rendered.html)",
+      "Read(//tmp/**)",
+      "Bash(grep -n '\\\\$\\\\|\\\\\\\\[a-z]' README.md)",
+      "Bash(grep -n '\\\\$' README.md)",
+      "Bash(grep -n '\\\\\\\\\\\\\\(frac\\\\|left\\\\|right\\\\|alpha\\\\|Delta\\\\|rho\\\\|cdot\\\\|times\\\\|bmod\\\\|mathrm\\\\|boldsymbol\\\\|begin\\\\|end\\\\|delta\\\\|omega\\\\|tau\\\\|beta\\\\|pi\\\\|geq\\\\|times\\\\\\)' README.md)",
+      "Bash(grep -n '\\\\\\\\\\\\\\\\' README.md)",
+      "Bash(grep -n '\\\\\\\\[a-zA-Z]' README.md)",
+      "Bash(awk 'BEGIN{f=0} /^```/{f=!f; next} f==0{n=gsub\\(/`/,\"`\"\\); if\\(n%2==1\\) print NR\": \"$0}' README.md)",
+      "WebSearch"
+    ]
+  }
+}
