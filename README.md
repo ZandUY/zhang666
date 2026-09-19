@@ -51,7 +51,7 @@ $$
 对第 $i$ 架无人机，离散时间位置更新为：
 
 $$
-\boxed{\mathbf p_i^{k+1}=\mathbf p_i^k+\mathbf v_i^k\Delta t}
+\mathbf p_i^{k+1}=\mathbf p_i^k+\mathbf v_i^k\Delta t
 $$
 
 速度先按照速度命令进行一阶平滑：
@@ -67,7 +67,6 @@ $$
 向量 $\widetilde{\mathbf v}_i^{k+1}$，最终使用的速度为 $\mathbf v_i^{k+1}$：
 
 $$
-\boxed{
 \mathbf v_i^{k+1}=\begin{cases}
 \widetilde{\mathbf v}_i^{k+1},
 & \left\|\widetilde{\mathbf v}_i^{k+1}\right\|\leq v_{\max}, \\
@@ -75,7 +74,6 @@ v_{\max}\dfrac{\widetilde{\mathbf v}_i^{k+1}}
 {\left\|\widetilde{\mathbf v}_i^{k+1}\right\|},
 & \left\|\widetilde{\mathbf v}_i^{k+1}\right\|>v_{\max}.
 \end{cases}
-}
 $$
 
 直观地说：速度没有超限时保持不变；速度超限时，只把整根速度向量“缩短”到
@@ -106,8 +104,8 @@ $$
 领航者使用目标吸引项：
 
 $$
-\boxed{\mathbf F_{\mathrm{goal}}
-=k_{\mathrm{goal}}\left(\mathbf p_g-\mathbf p_L\right)}
+\mathbf F_{\mathrm{goal}}
+=k_{\mathrm{goal}}\left(\mathbf p_g-\mathbf p_L\right)
 $$
 
 其中，$\mathbf p_g$ 是目标点，$\mathbf p_L$ 是领航者当前位置，$k_{\mathrm{goal}}>0$ 是目标吸引增益。该项的方向始终由领航者指向目标点。
@@ -137,8 +135,8 @@ $$
 跟随者的期望位置由领航者航向和编队偏移共同确定：
 
 $$
-\boxed{\mathbf p_{i,\mathrm{des}}
-=\mathbf p_L+\mathbf R_z(\psi_L)\boldsymbol{\delta}_i},
+\mathbf p_{i,\mathrm{des}}
+=\mathbf p_L+\mathbf R_z(\psi_L)\boldsymbol{\delta}_i,
 \qquad i=1,2,3,4.
 $$
 
@@ -174,8 +172,8 @@ $$
 程序首先根据速度命令与当前速度之差，构造仅用于显示的近似期望加速度：
 
 $$
-\boxed{\mathbf a_{\mathrm{des},i}
-=\frac{\mathbf v_{\mathrm{cmd},i}-\mathbf v_i}{\tau_v}}
+\mathbf a_{\mathrm{des},i}
+=\frac{\mathbf v_{\mathrm{cmd},i}-\mathbf v_i}{\tau_v}
 $$
 
 其中，$\tau_v$ 是速度响应显示时间常数。该加速度不是由质量和推力方程计算得到的真实加速度。
@@ -201,17 +199,13 @@ $$
 期望俯仰角 $\theta_{\mathrm{des}}$ 和期望横滚角 $\phi_{\mathrm{des}}$ 为：
 
 $$
-\boxed{
 \theta_{\mathrm{des}}
 =\mathrm{clip}\!\left(\frac{a_{b,x}}{g},-\theta_{\max},\theta_{\max}\right)
-}
 $$
 
 $$
-\boxed{
 \phi_{\mathrm{des}}
 =\mathrm{clip}\!\left(-\frac{a_{b,y}}{g},-\phi_{\max},\phi_{\max}\right)
-}
 $$
 
 这里，$g=9.81\ \mathrm{m/s^2}$；$\mathrm{clip}(x,a,b)$ 表示把 $x$ 限制在区间 $[a,b]$；$\phi_{\max}=\theta_{\max}=25^\circ$。正向机体加速度表现为俯仰，横向机体加速度表现为横滚。
@@ -233,10 +227,8 @@ $$
 角度环绕函数定义为：
 
 $$
-\boxed{
 \mathrm{wrapToPi}(\gamma)
 =\left((\gamma+\pi)\bmod 2\pi\right)-\pi
-}
 $$
 
 它把偏航误差限制在 $[-\pi,\pi)$，使无人机始终沿较短方向转动。例如，当前偏航为 $179^\circ$、期望偏航为 $-179^\circ$ 时，实际误差会被处理为 $2^\circ$，而不是 $-358^\circ$。
@@ -278,9 +270,7 @@ $$
 第 $j$ 个旋翼的动画相位更新为：
 
 $$
-\boxed{
 q_j^{k+1}=\left(q_j^k+s_j\omega_j^k\Delta t\right)\bmod 2\pi
-}
 $$
 
 对 $2\pi$ 取模可以防止相位数值无限增大。上述旋翼混控只服务于动画效果，不产生推力，也不参与无人机的位置、速度或姿态更新。
@@ -288,11 +278,9 @@ $$
 绘制机体时，局部坐标点 $\mathbf r_b$ 通过欧拉角旋转到世界坐标系：
 
 $$
-\boxed{
-\mathbf r_w=\mathbf p_i+mathbf R\mathbf r_b,
+\mathbf r_w=\mathbf p_i+\mathbf R\mathbf r_b,
 \qquad
 \mathbf R=\mathbf R_z(\psi)\mathbf R_y(\theta)\mathbf R_x(\phi)
-}
 $$
 
 其中：
@@ -339,7 +327,7 @@ $$
 无人机外表面到障碍物外表面的净距离为：
 
 $$
-\boxed{\rho_{ij}=d_{ij}-r_j-r_u}
+\rho_{ij}=d_{ij}-r_j-r_u
 $$
 
 因此，$\rho_{ij}>0$ 表示二者仍有间隙，$\rho_{ij}=0$ 表示刚好接触，$\rho_{ij}<0$ 表示发生几何重叠。背离障碍物的径向单位向量为：
@@ -353,7 +341,6 @@ $$
 当无人机位于影响距离 $\rho_{0,j}$ 内时，障碍物排斥速度分量为：
 
 $$
-\boxed{
 \mathbf F_{\mathrm{obs},ij}=\begin{cases}
 k_{\mathrm{obs}}
 \left(\dfrac{1}{\rho_{ij}^{\ast}}-\dfrac{1}{\rho_{0,j}}\right)
@@ -362,7 +349,6 @@ k_{\mathrm{obs}}
 \mathbf 0_{3\times1},
 & \rho_{ij}\geq\rho_{0,j},
 \end{cases}
-}
 $$
 
 其中：
@@ -396,7 +382,6 @@ $$
 当 $d_{ij}$ 小于安全距离 $d_{\mathrm{safe}}$ 时，施加机间排斥项：
 
 $$
-\boxed{
 \mathbf F_{\mathrm{sep},ij}=\begin{cases}
 k_{\mathrm{sep}}
 \left(\dfrac{1}{d_{ij}^{\ast}}-\dfrac{1}{d_{\mathrm{safe}}}\right)
@@ -405,7 +390,6 @@ k_{\mathrm{sep}}
 \mathbf 0_{3\times1},
 & d_{ij}\geq d_{\mathrm{safe}},
 \end{cases}
-}
 $$
 
 其中 $d_{ij}^{\ast}=\max(d_{ij},\varepsilon)$。同一无人机对只计算一次，并按照
@@ -425,23 +409,19 @@ $$
 加入避障后的完整速度命令为：
 
 $$
-\boxed{
 \mathbf v_{\mathrm{cmd},L}
 =\mathbf F_{\mathrm{goal},L}
 +\mathbf F_{\mathrm{obs},L}
 +\mathbf F_{\mathrm{sep},L}
-}
 $$
 
 $$
-\boxed{
 \mathbf v_{\mathrm{cmd},i}
 =\mathbf F_{\mathrm{form},i}
 +\mathbf F_{\mathrm{vel},i}
 +\mathbf F_{\mathrm{obs},i}
 +\mathbf F_{\mathrm{sep},i},
 \quad i=1,2,3,4
-}
 $$
 
 所有控制分量相加后，仍按 $v_{\max}$ 对速度命令整体限幅，再进入速度平滑环节。
@@ -500,7 +480,7 @@ $$
 $$
 
 $$
-\boxed{\mathbf F_{\mathrm{escape},i}=k_{\mathrm{escape}}\mathbf t_i}
+\mathbf F_{\mathrm{escape},i}=k_{\mathrm{escape}}\mathbf t_i
 $$
 
 由于 $\|\mathbf t_i\|=1$，逃逸力模长为 $k_{\mathrm{escape}}$。叉乘保证 $\mathbf t_i\perp\mathbf n_i$，因此逃逸项沿障碍物切向推动无人机，而不是继续与径向排斥力对抗。
@@ -524,22 +504,18 @@ $$
 移动球形障碍物按真实速度更新：
 
 $$
-\boxed{
 \mathbf c_j^{k+1}=\mathbf c_j^k+\mathbf v_{o,j}\Delta t
-}
 $$
 
 其中，$\mathbf c_j^k$ 是第 $j$ 个移动障碍物的真实中心，$\mathbf v_{o,j}$ 是其恒定速度。控制器使用的障碍物中心为：
 
 $$
-\boxed{
 \widehat{\mathbf c}_j^k=\begin{cases}
 \mathbf c_j^k,
 & \text{当前位置方法},\\
 \mathbf c_j^k+T_p\mathbf v_{o,j},
 & \text{预测位置方法}.
 \end{cases}
-}
 $$
 
 其中，$T_p=1.0\ \mathrm s$ 是预测时域。人工势场公式中的障碍物中心 $\mathbf c_j$ 会被替换为控制中心 $\widehat{\mathbf c}_j^k$，但它只参与排斥速度计算，不会写回真实障碍物状态。
@@ -633,13 +609,11 @@ $$
 实验三和实验四的单次运行成功条件进一步要求：
 
 $$
-\boxed{
 \mathrm{success}
 =\mathrm{completed}
 \land(N_{\mathrm{obs}}=0)
 \land(N_{\mathrm{uav}}=0)
 \land(e_{\mathrm{final}}<1\ \mathrm m)
-}
 $$
 
 其中，$N_{\mathrm{obs}}$ 和 $N_{\mathrm{uav}}$ 分别是经连续接触去重后的障碍物碰撞次数和无人机碰撞次数。
