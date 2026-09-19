@@ -116,7 +116,7 @@ $$
 
 $$
 \psi_L=\begin{cases}
-\operatorname{atan2}(v_{L,y},v_{L,x}),
+\mathrm{atan2}(v_{L,y},v_{L,x}),
 & \sqrt{v_{L,x}^2+v_{L,y}^2}>\varepsilon_v,\\
 \psi_{L,\mathrm{last}},
 & \sqrt{v_{L,x}^2+v_{L,y}^2}\leq\varepsilon_v.
@@ -184,7 +184,7 @@ $$
 
 $$
 \psi_{\mathrm{des},i}=\begin{cases}
-\operatorname{atan2}(v_{i,y},v_{i,x}),
+\mathrm{atan2}(v_{i,y},v_{i,x}),
 & \sqrt{v_{i,x}^2+v_{i,y}^2}>\varepsilon_v,\\
 \psi_{i,\mathrm{last}},
 & \sqrt{v_{i,x}^2+v_{i,y}^2}\leq\varepsilon_v.
@@ -203,18 +203,18 @@ $$
 $$
 \boxed{
 \theta_{\mathrm{des}}
-=\operatorname{clip}\!\left(\frac{a_{b,x}}{g},-\theta_{\max},\theta_{\max}\right)
+=\mathrm{clip}\!\left(\frac{a_{b,x}}{g},-\theta_{\max},\theta_{\max}\right)
 }
 $$
 
 $$
 \boxed{
 \phi_{\mathrm{des}}
-=\operatorname{clip}\!\left(-\frac{a_{b,y}}{g},-\phi_{\max},\phi_{\max}\right)
+=\mathrm{clip}\!\left(-\frac{a_{b,y}}{g},-\phi_{\max},\phi_{\max}\right)
 }
 $$
 
-这里，$g=9.81\ \mathrm{m/s^2}$；$\operatorname{clip}(x,a,b)$ 表示把 $x$ 限制在区间 $[a,b]$；$\phi_{\max}=\theta_{\max}=25^\circ$。正向机体加速度表现为俯仰，横向机体加速度表现为横滚。
+这里，$g=9.81\ \mathrm{m/s^2}$；$\mathrm{clip}(x,a,b)$ 表示把 $x$ 限制在区间 $[a,b]$；$\phi_{\max}=\theta_{\max}=25^\circ$。正向机体加速度表现为俯仰，横向机体加速度表现为横滚。
 
 姿态采用一阶平滑跟随：
 
@@ -226,7 +226,7 @@ $$
 &=\theta_i^k+\beta_{rp}\left(\theta_{\mathrm{des},i}-\theta_i^k\right),\\
 \psi_i^{k+1}
 &=\psi_i^k+\beta_{\mathrm{yaw}}
-\operatorname{wrapToPi}\!\left(\psi_{\mathrm{des},i}-\psi_i^k\right).
+\mathrm{wrapToPi}\!\left(\psi_{\mathrm{des},i}-\psi_i^k\right).
 \end{aligned}
 $$
 
@@ -234,7 +234,7 @@ $$
 
 $$
 \boxed{
-\operatorname{wrapToPi}(\gamma)
+\mathrm{wrapToPi}(\gamma)
 =\left((\gamma+\pi)\bmod 2\pi\right)-\pi
 }
 $$
@@ -262,7 +262,7 @@ $$
 
 $$
 \boldsymbol\omega
-=\operatorname{clip}\!\left[
+=\mathrm{clip}\!\left[
 \omega_{\mathrm{base}}\mathbf 1_4
 +k_{\mathrm{vis}}\left(e_\phi\mathbf m_\phi+e_\theta\mathbf m_\theta\right),
 \omega_{\min},\omega_{\max}
@@ -375,7 +375,7 @@ $k_{\mathrm{obs}}>0$ 是障碍物排斥增益，$\varepsilon>0$ 是防止除零�
 
 $$
 \mathbf F_{\mathrm{obs},i}
-=\operatorname{limitNorm}\!\left(
+=\mathrm{limitNorm}\!\left(
 \sum_j\mathbf F_{\mathrm{obs},ij},
 F_{\mathrm{obs},\max}
 \right).
@@ -416,7 +416,7 @@ $\mathbf F_{\mathrm{sep},ji}=-\mathbf F_{\mathrm{sep},ij}$
 
 $$
 \mathbf F_{\mathrm{sep},i}
-=\operatorname{limitNorm}\!\left(
+=\mathrm{limitNorm}\!\left(
 \sum_{j\ne i}\mathbf F_{\mathrm{sep},ij},
 F_{\mathrm{sep},\max}
 \right).
