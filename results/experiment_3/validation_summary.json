@@ -1,0 +1,19 @@
+{
+  "tangent_checks": {
+    "tangent_force_has_k_escape_norm": true,
+    "tangent_is_perpendicular_to_radial": true,
+    "fallback_tangent_is_finite": true,
+    "fallback_tangent_has_k_escape_norm": true
+  },
+  "batch_checks": {
+    "same_initial_conditions_for_each_seed": true,
+    "standard_method_never_uses_escape_force": true,
+    "all_detections_use_window_and_consecutive_streak": true,
+    "all_20_runs_written_to_csv": true,
+    "standard_failures_are_present_in_csv": true,
+    "batch_continued_after_failures": true,
+    "visual_parameters_do_not_change_trajectory": true,
+    "max_visual_independence_position_difference_m": 0.0,
+    "simulation_exception_count": 0
+  }
+}

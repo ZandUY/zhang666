@@ -1,0 +1,23 @@
+{
+  "controller_unit_checks": {
+    "outside_influence_returns_shape_3": true,
+    "outside_influence_returns_exact_zero": true,
+    "obstacle_repulsion_points_away": true,
+    "obstacle_force_within_limit": true,
+    "overlap_separation_is_finite": true,
+    "overlap_separation_is_deterministic": true,
+    "overlap_pair_forces_are_opposite": true,
+    "overlap_pair_force_is_nonzero": true,
+    "sample_away_dot_product": 25.330671458973544
+  },
+  "cross_method_checks": {
+    "all_methods_same_initial_positions": true,
+    "all_methods_same_initial_velocities": true,
+    "no_avoidance_detects_obstacle_collision": true,
+    "obstacle_apf_avoids_obstacle": true,
+    "combined_method_avoids_obstacle": true,
+    "separation_improves_minimum_distance": true,
+    "method_b_minimum_inter_uav_distance_m": 2.9483780577953804,
+    "method_c_minimum_inter_uav_distance_m": 2.972913750958639
+  }
+}

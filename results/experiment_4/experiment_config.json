@@ -1,0 +1,46 @@
+{
+  "model": "3D first-order kinematics; attitude and rotors are visual only",
+  "moving_obstacle": {
+    "obstacle_id": 0,
+    "initial_center": [
+      25.0,
+      -12.0,
+      12.0
+    ],
+    "radius_m": 2.0,
+    "base_velocity": [
+      0.0,
+      1.0,
+      0.0
+    ],
+    "influence_distance_m": 6.0
+  },
+  "tested_speeds_m_per_s": [
+    0.5,
+    1.0,
+    1.5
+  ],
+  "prediction_time_s": 1.0,
+  "random_seeds": [
+    7,
+    19,
+    42,
+    73,
+    91
+  ],
+  "formation_recovery": {
+    "error_threshold_m": 0.8,
+    "continuous_hold_time_s": 2.0,
+    "post_completion_observation_time_s": 10.0
+  },
+  "step_order": [
+    "read current UAV and obstacle states",
+    "compute optional predicted obstacle center",
+    "compute velocity commands",
+    "integrate UAV position and smooth velocity",
+    "update visual attitude and rotors",
+    "update true moving obstacle center",
+    "collision detection with true center",
+    "record all states and safety metrics"
+  ]
+}

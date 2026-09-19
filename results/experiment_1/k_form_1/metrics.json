@@ -1,0 +1,46 @@
+{
+  "k_form": 1.0,
+  "model_note": "三维一阶运动学模型；姿态和视觉旋翼不构成四旋翼飞行动力学模型，rotor_speeds 不参与位置、速度或姿态更新。",
+  "metrics": {
+    "reached_goal_and_formation": true,
+    "completion_time_s": 18.35,
+    "mean_formation_error_m": 2.662261829076924,
+    "max_formation_error_m": 2.999998039426725,
+    "final_formation_error_m": 0.9895655572823753,
+    "flight_distance_per_uav_m": {
+      "uav_0": 49.19708376860014,
+      "uav_1": 47.90671049644976,
+      "uav_2": 48.68625642689188,
+      "uav_3": 48.171124511887896,
+      "uav_4": 48.9465436213013
+    },
+    "total_flight_distance_m": 242.90771882513098,
+    "max_abs_roll_deg": 5.008976478576221,
+    "max_abs_pitch_deg": 11.184461255101864,
+    "attitude_change_rms_deg_per_s": 14.555251001271483,
+    "visual_rotor_speed_range_rad_per_s": [
+      37.4319967539081,
+      51.388840708703604
+    ],
+    "max_actual_speed_m_per_s": 3.0,
+    "final_leader_goal_distance_m": 0.8029162313998626
+  },
+  "validation": {
+    "goal_and_formation_reached": true,
+    "all_states_finite": true,
+    "speed_within_limit": true,
+    "roll_within_limit": true,
+    "pitch_within_limit": true,
+    "yaw_has_no_large_reverse_jump": true,
+    "maximum_yaw_step_deg": 16.742288333366307,
+    "rotor_speeds_within_visual_limits": true,
+    "rotor_phases_in_zero_two_pi": true,
+    "rotor_phase_update_matches_direction": true,
+    "adjacent_rotors_have_opposite_directions": true,
+    "final_mean_formation_error_below_1m": true,
+    "position_update_uses_rotor_thrust": false,
+    "model_is_quadcopter_flight_dynamics": false,
+    "trajectory_independent_of_visual_parameters": true,
+    "max_position_difference_after_visual_parameter_change_m": 0.0
+  }
+}

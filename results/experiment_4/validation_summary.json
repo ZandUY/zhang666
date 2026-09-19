@@ -1,0 +1,12 @@
+{
+  "same_initial_conditions_for_paired_methods": true,
+  "prediction_does_not_modify_real_obstacle_path": true,
+  "every_run_recreates_obstacle_at_initial_center": true,
+  "all_30_runs_written_to_csv": true,
+  "batch_generated_no_animation": true,
+  "visual_parameters_do_not_change_result": true,
+  "max_visual_independence_difference_m": 0.0,
+  "all_motion_validations_pass": true,
+  "collision_detection_uses_real_position": true,
+  "simulation_exception_count": 0
+}

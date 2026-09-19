@@ -1,0 +1,87 @@
+{
+  "model": "3D first-order kinematics; attitude and rotors are visual only",
+  "goal": [
+    50.0,
+    0.0,
+    12.0
+  ],
+  "initial_velocity_m_per_s": [
+    0.0,
+    0.0,
+    0.0
+  ],
+  "obstacles": [
+    {
+      "obstacle_id": 1,
+      "center": [
+        20.0,
+        -4.0,
+        12.0
+      ],
+      "radius_m": 3.5,
+      "influence_distance_m": 6.0
+    },
+    {
+      "obstacle_id": 2,
+      "center": [
+        20.0,
+        4.0,
+        12.0
+      ],
+      "radius_m": 3.5,
+      "influence_distance_m": 6.0
+    },
+    {
+      "obstacle_id": 3,
+      "center": [
+        27.0,
+        0.0,
+        9.0
+      ],
+      "radius_m": 3.0,
+      "influence_distance_m": 6.0
+    },
+    {
+      "obstacle_id": 4,
+      "center": [
+        27.0,
+        0.0,
+        15.0
+      ],
+      "radius_m": 3.0,
+      "influence_distance_m": 6.0
+    }
+  ],
+  "uav_radius_m": 0.3,
+  "k_obs": 20.0,
+  "max_obstacle_force": 8.0,
+  "obstacle_parameter_note": "Compared with experiment 2, k_obs was increased from 8 to 20 and max_obstacle_force from 5 to 8 so that the symmetric four-obstacle field reproducibly exhibits a standard-APF local minimum.",
+  "d_safe_m": 4.0,
+  "k_sep": 3.0,
+  "local_minimum": {
+    "history_steps": 20,
+    "distance_threshold_m": 2.0,
+    "speed_threshold_m_per_s": 0.15,
+    "improvement_threshold_m": 0.05,
+    "consecutive_steps": 5
+  },
+  "escape": {
+    "k_escape": 1.0,
+    "maximum_duration_s": 2.0,
+    "exit_improvement_m": 0.2,
+    "cooldown_s": 0.5
+  },
+  "random_seeds": [
+    3,
+    7,
+    11,
+    19,
+    23,
+    31,
+    42,
+    57,
+    73,
+    91
+  ],
+  "representative_seed": 42
+}
