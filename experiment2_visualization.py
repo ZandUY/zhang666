@@ -22,9 +22,9 @@ METHOD_COLORS = {
 }
 
 METHOD_LABELS = {
-    "A_no_avoidance": "A: No avoidance",
-    "B_obstacle_apf": "B: Obstacle APF",
-    "C_apf_and_separation": "C: APF + separation",
+    "A_no_avoidance": "方法 A：无避障",
+    "B_obstacle_apf": "方法 B：障碍物人工势场（APF）",
+    "C_apf_and_separation": "方法 C：人工势场（APF）+ 机间避碰",
 }
 
 
@@ -34,9 +34,9 @@ def _configure_axis(axis: plt.Axes, result: Experiment2Result) -> None:
     axis.set_xlim(*config.x_limits)
     axis.set_ylim(*config.y_limits)
     axis.set_zlim(*config.z_limits)
-    axis.set_xlabel("x (m)")
-    axis.set_ylabel("y (m)")
-    axis.set_zlabel("z (m)")
+    axis.set_xlabel("X 坐标（m）")
+    axis.set_ylabel("Y 坐标（m）")
+    axis.set_zlabel("Z 坐标（m）")
     axis.set_box_aspect(
         (
             config.x_limits[1] - config.x_limits[0],
@@ -55,11 +55,11 @@ def plot_method_trajectory(result: Experiment2Result, output_path: Path) -> None
     draw_sphere_obstacles(axis, result.config.obstacles)
     for index in range(result.positions.shape[1]):
         trajectory = result.positions[:, index]
-        label = "Leader UAV 0" if index == 0 else f"Follower UAV {index}"
+        label = "领航无人机（UAV 0）" if index == 0 else f"跟随无人机（UAV {index}）"
         axis.plot(*trajectory.T, color=UAV_COLORS[index], linewidth=1.8, label=label)
         axis.scatter(*trajectory[0], color=UAV_COLORS[index], marker="o", s=25)
         axis.scatter(*trajectory[-1], color=UAV_COLORS[index], marker="^", s=35)
-    axis.scatter(*result.config.goal, color="black", marker="*", s=130, label="Goal")
+    axis.scatter(*result.config.goal, color="black", marker="*", s=130, label="目标点")
     _configure_axis(axis, result)
     axis.set_title(METHOD_LABELS[result.method_name])
     axis.legend(loc="upper left", fontsize=8)
@@ -85,7 +85,7 @@ def plot_all_trajectories(
         axis.scatter(*result.config.goal, color="black", marker="*", s=90)
         _configure_axis(axis, result)
         axis.set_title(METHOD_LABELS[result.method_name])
-    figure.suptitle("Experiment 2: 3D Trajectory Comparison")
+    figure.suptitle("实验二：三维飞行轨迹对比")
     figure.tight_layout()
     figure.savefig(output_path, dpi=180)
     plt.close(figure)
@@ -104,10 +104,10 @@ def plot_formation_error_comparison(
             linewidth=1.8,
             label=METHOD_LABELS[result.method_name],
         )
-    axis.axhline(1.0, color="gray", linestyle="--", linewidth=1.0, label="1 m")
-    axis.set_xlabel("Time (s)")
-    axis.set_ylabel("Mean formation error (m)")
-    axis.set_title("Formation Error Comparison")
+    axis.axhline(1.0, color="gray", linestyle="--", linewidth=1.0, label="1 m 阈值")
+    axis.set_xlabel("时间（s）")
+    axis.set_ylabel("平均编队误差（m）")
+    axis.set_title("平均编队误差对比")
     axis.grid(True, alpha=0.3)
     axis.legend()
     figure.tight_layout()
@@ -128,10 +128,10 @@ def plot_obstacle_clearance_comparison(
             linewidth=1.8,
             label=METHOD_LABELS[result.method_name],
         )
-    axis.axhline(0.0, color="black", linestyle="--", linewidth=1.0, label="Collision boundary")
-    axis.set_xlabel("Time (s)")
-    axis.set_ylabel("Minimum obstacle clearance (m)")
-    axis.set_title("Obstacle Surface Clearance")
+    axis.axhline(0.0, color="black", linestyle="--", linewidth=1.0, label="碰撞边界")
+    axis.set_xlabel("时间（s）")
+    axis.set_ylabel("最小障碍物净距离（m）")
+    axis.set_title("无人机与障碍物表面净距离")
     axis.grid(True, alpha=0.3)
     axis.legend()
     figure.tight_layout()
@@ -158,18 +158,18 @@ def plot_inter_uav_distance_comparison(
         color="black",
         linestyle="--",
         linewidth=1.0,
-        label="Collision boundary",
+        label="碰撞边界",
     )
     axis.axhline(
         config.d_safe,
         color="gray",
         linestyle=":",
         linewidth=1.0,
-        label="d_safe",
+        label="安全距离（d_safe）",
     )
-    axis.set_xlabel("Time (s)")
-    axis.set_ylabel("Minimum inter-UAV distance (m)")
-    axis.set_title("Inter-UAV Safety Distance")
+    axis.set_xlabel("时间（s）")
+    axis.set_ylabel("最小无人机间距（m）")
+    axis.set_title("无人机间安全距离")
     axis.grid(True, alpha=0.3)
     axis.legend()
 
@@ -184,7 +184,7 @@ def plot_inter_uav_distance_comparison(
         )
     inset.set_xlim(8.0, 13.0)
     inset.set_ylim(2.90, 3.08)
-    inset.set_title("B/C minimum zoom", fontsize=8)
+    inset.set_title("方法 B/C 最小值局部放大", fontsize=8)
     inset.grid(True, alpha=0.25)
     inset.tick_params(labelsize=7)
     figure.tight_layout()
@@ -195,19 +195,19 @@ def plot_inter_uav_distance_comparison(
 def plot_result_table(results: list[Experiment2Result], output_path: Path) -> None:
     """把实验二主要指标保存为可直接查看的图片表格。"""
     columns = [
-        "Method",
-        "Success",
-        "Time (s)",
-        "Mean err (m)",
-        "Max err (m)",
-        "Min obs clr (m)",
-        "Min UAV dist (m)",
-        "Obs hits",
-        "UAV hits",
-        "Total dist (m)",
-        "Max roll (deg)",
-        "Max pitch (deg)",
-        "Limit count",
+        "方法",
+        "成功",
+        "时间（s）",
+        "平均误差（m）",
+        "最大误差（m）",
+        "最小障碍物净距（m）",
+        "最小机间距（m）",
+        "障碍物碰撞",
+        "机间碰撞",
+        "总航程（m）",
+        "最大横滚角（°）",
+        "最大俯仰角（°）",
+        "限幅次数",
     ]
     rows: list[list[str]] = []
     for result in results:
@@ -215,7 +215,7 @@ def plot_result_table(results: list[Experiment2Result], output_path: Path) -> No
         rows.append(
             [
                 result.method_name.split("_")[0],
-                str(metric["success"]),
+                "是" if metric["success"] else "否",
                 "-" if metric["completion_time_s"] is None else f"{metric['completion_time_s']:.2f}",
                 f"{metric['mean_formation_error_m']:.3f}",
                 f"{metric['max_formation_error_m']:.3f}",
@@ -235,7 +235,7 @@ def plot_result_table(results: list[Experiment2Result], output_path: Path) -> No
     table.auto_set_font_size(False)
     table.set_fontsize(8)
     table.scale(1.0, 1.6)
-    axis.set_title("Experiment 2 Result Comparison", pad=18)
+    axis.set_title("实验二结果对比", pad=18)
     figure.tight_layout()
     figure.savefig(output_path, dpi=180, bbox_inches="tight")
     plt.close(figure)

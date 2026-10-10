@@ -1,6 +1,6 @@
 {
   "method": "C_apf_and_separation",
-  "method_label": "C: APF + separation",
+  "method_label": "方法 C：人工势场（APF）+ 机间避碰",
   "obstacle_avoidance_enabled": true,
   "separation_enabled": true,
   "model_note": "三维一阶运动学模型；人工势场只生成期望速度，姿态和旋翼为视觉状态，不包含四旋翼飞行动力学。",

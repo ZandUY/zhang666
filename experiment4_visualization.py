@@ -23,8 +23,8 @@ from visualization import (
 
 METHODS = ("current_position", "predicted_position")
 METHOD_LABELS = {
-    "current_position": "Current position APF",
-    "predicted_position": "Predicted position APF",
+    "current_position": "当前位置人工势场法（APF）",
+    "predicted_position": "预测位置人工势场法（APF）",
 }
 METHOD_COLORS = {
     "current_position": "tab:blue",
@@ -64,7 +64,7 @@ def plot_dynamic_trajectory(
     axis = figure.add_subplot(111, projection="3d")
     for uav_index in range(result.positions.shape[1]):
         trajectory = result.positions[:, uav_index]
-        label = "Leader UAV 0" if uav_index == 0 else f"Follower UAV {uav_index}"
+        label = "领航无人机（UAV 0）" if uav_index == 0 else f"跟随无人机（UAV {uav_index}）"
         axis.plot(
             *trajectory.T,
             color=UAV_COLORS[uav_index],
@@ -81,16 +81,16 @@ def plot_dynamic_trajectory(
             color="darkorange",
             linestyle="--",
             linewidth=2.0,
-            label="Moving obstacle path" if obstacle_index == 0 else None,
+            label="移动障碍物轨迹" if obstacle_index == 0 else None,
         )
         closest_frame = int(np.argmin(result.obstacle_min_clearances))
         _draw_moving_sphere(
             axis, history[closest_frame], obstacle.radius, alpha=0.38
         )
-    axis.scatter(*result.config.goal, color="black", marker="*", s=120, label="Goal")
+    axis.scatter(*result.config.goal, color="black", marker="*", s=120, label="目标点")
     _configure_3d_axes(axis, result)
     axis.set_title(
-        f"{METHOD_LABELS[result.method_name]} | obstacle speed={result.obstacle_speed:g} m/s"
+        f"{METHOD_LABELS[result.method_name]}｜障碍物速度={result.obstacle_speed:g} m/s"
     )
     axis.legend(loc="upper left", fontsize=8)
     figure.tight_layout()
@@ -130,7 +130,7 @@ def _grouped_bar(
             text = f"{value:.2f}"
             if annotate_unrecovered:
                 count = int(method_rows[speed]["unrecovered_count"])
-                text += f"\nNR={count}"
+                text += f"\n未恢复（NR）={count}"
             axis.text(
                 bar.get_x() + bar.get_width() / 2.0,
                 bar.get_height(),
@@ -140,7 +140,7 @@ def _grouped_bar(
                 fontsize=8,
             )
     axis.set_xticks(x_locations, [f"{speed:g}" for speed in speeds])
-    axis.set_xlabel("Moving obstacle speed (m/s)")
+    axis.set_xlabel("移动障碍物速度（m/s）")
     axis.set_ylabel(ylabel)
     axis.set_title(title)
     axis.grid(axis="y", alpha=0.3)
@@ -155,8 +155,8 @@ def plot_success_rates(summaries: list[dict[str, Any]], output_path: Path) -> No
     _grouped_bar(
         summaries,
         "success_rate_percent",
-        "Success rate (%)",
-        "Dynamic Obstacle Avoidance Success Rate",
+        "成功率（%）",
+        "动态障碍物避障成功率",
         output_path,
     )
 
@@ -168,8 +168,8 @@ def plot_clearance_comparison(
     _grouped_bar(
         summaries,
         "average_minimum_obstacle_clearance_m",
-        "Average minimum clearance (m)",
-        "Minimum Moving-Obstacle Clearance",
+        "平均最小净距离（m）",
+        "移动障碍物最小净距离",
         output_path,
     )
 
@@ -181,8 +181,8 @@ def plot_max_error_comparison(
     _grouped_bar(
         summaries,
         "average_max_formation_error_m",
-        "Average run maximum error (m)",
-        "Maximum Formation Error Comparison",
+        "平均最大编队误差（m）",
+        "最大编队误差对比",
         output_path,
     )
 
@@ -194,8 +194,8 @@ def plot_recovery_comparison(
     _grouped_bar(
         summaries,
         "average_recovery_time_recovered_s",
-        "Average recovery time (s)",
-        "Formation Recovery Time (NR = not recovered)",
+        "平均编队恢复时间（s）",
+        "编队恢复时间（NR 表示未恢复）",
         output_path,
         annotate_unrecovered=True,
     )
@@ -220,8 +220,8 @@ def create_dynamic_animation(
         mean_error = float(np.mean(result.formation_errors[frame]))
         clearance = float(result.obstacle_min_clearances[frame])
         global_axis.set_title(
-            f"t={result.times[frame]:.2f} s | formation error={mean_error:.2f} m\n"
-            f"minimum clearance={clearance:.2f} m"
+            f"时间 t={result.times[frame]:.2f} s｜平均编队误差={mean_error:.2f} m\n"
+            f"最小净距离={clearance:.2f} m"
         )
         global_axis.scatter(*result.config.goal, color="black", marker="*", s=100)
 
@@ -259,15 +259,17 @@ def create_dynamic_animation(
         closeup_axis.set_ylim(-1.25, 1.25)
         closeup_axis.set_zlim(-0.9, 0.9)
         closeup_axis.set_box_aspect((2.5, 2.5, 1.8))
-        closeup_axis.set_xlabel("body-centered x (m)")
-        closeup_axis.set_ylabel("body-centered y (m)")
-        closeup_axis.set_zlabel("relative z (m)")
+        closeup_axis.set_xlabel("机体中心 X 坐标（m）")
+        closeup_axis.set_ylabel("机体中心 Y 坐标（m）")
+        closeup_axis.set_zlabel("相对 Z 坐标（m）")
         closeup_axis.view_init(elev=28.0, azim=-52.0)
         closeup_axis.grid(True, alpha=0.3)
         angles = np.rad2deg(result.attitudes[frame, representative_index])
         closeup_axis.set_title(
-            "UAV 1 close-up\n"
-            f"roll={angles[0]:.1f}, pitch={angles[1]:.1f}, yaw={angles[2]:.1f} deg"
+            "无人机姿态近景（UAV 1）\n"
+            f"横滚角（roll）={angles[0]:.1f}°，"
+            f"俯仰角（pitch）={angles[1]:.1f}°，"
+            f"偏航角（yaw）={angles[2]:.1f}°"
         )
         _draw_quadcopter(
             closeup_axis,

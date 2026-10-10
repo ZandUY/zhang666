@@ -20,6 +20,17 @@ from models import SphereObstacle
 from simulator import SimulationResult
 
 
+# 优先使用常见中文字体；保留 DejaVu Sans 作为数字与符号回退字体。
+plt.rcParams["font.sans-serif"] = [
+    "Microsoft YaHei",
+    "SimHei",
+    "Noto Sans CJK SC",
+    "Arial Unicode MS",
+    "DejaVu Sans",
+]
+plt.rcParams["axes.unicode_minus"] = False
+
+
 UAV_COLORS = ("red", "tab:blue", "tab:green", "tab:orange", "tab:purple")
 
 
@@ -40,9 +51,9 @@ def _configure_3d_axes(axis: plt.Axes, result: SimulationResult) -> None:
     axis.set_xlim(*config.x_limits)
     axis.set_ylim(*config.y_limits)
     axis.set_zlim(*config.z_limits)
-    axis.set_xlabel("x (m)")
-    axis.set_ylabel("y (m)")
-    axis.set_zlabel("z (m)")
+    axis.set_xlabel("X 坐标（m）")
+    axis.set_ylabel("Y 坐标（m）")
+    axis.set_zlabel("Z 坐标（m）")
     axis.set_box_aspect(
         (
             config.x_limits[1] - config.x_limits[0],
@@ -85,14 +96,14 @@ def plot_trajectories(result: SimulationResult, output_path: Path) -> None:
     figure = plt.figure(figsize=(11, 7))
     axis = figure.add_subplot(111, projection="3d")
     for index in range(result.positions.shape[1]):
-        label = "Leader UAV 0" if index == 0 else f"Follower UAV {index}"
+        label = "领航无人机（UAV 0）" if index == 0 else f"跟随无人机（UAV {index}）"
         trajectory = result.positions[:, index]
         axis.plot(*trajectory.T, color=UAV_COLORS[index], linewidth=1.8, label=label)
         axis.scatter(*trajectory[0], color=UAV_COLORS[index], marker="o", s=25)
         axis.scatter(*trajectory[-1], color=UAV_COLORS[index], marker="^", s=35)
-    axis.scatter(*result.config.goal, color="black", marker="*", s=130, label="Goal")
+    axis.scatter(*result.config.goal, color="black", marker="*", s=130, label="目标点")
     _configure_3d_axes(axis, result)
-    axis.set_title(f"3D Formation Trajectories (k_form={result.config.k_form:g})")
+    axis.set_title(f"三维编队飞行轨迹（k_form={result.config.k_form:g}）")
     axis.legend(loc="upper left", fontsize=8)
     figure.tight_layout()
     figure.savefig(output_path, dpi=180)
@@ -107,19 +118,19 @@ def plot_formation_errors(result: SimulationResult, output_path: Path) -> None:
             result.times,
             result.formation_errors[:, follower],
             linewidth=1.2,
-            label=f"UAV {follower + 1}",
+            label=f"无人机（UAV {follower + 1}）",
         )
     axis.plot(
         result.times,
         np.mean(result.formation_errors, axis=1),
         color="black",
         linewidth=2.2,
-        label="Follower mean",
+        label="跟随无人机平均值",
     )
-    axis.axhline(1.0, color="gray", linestyle="--", linewidth=1.0, label="1 m")
-    axis.set_xlabel("Time (s)")
-    axis.set_ylabel("Formation error (m)")
-    axis.set_title(f"Formation Errors (k_form={result.config.k_form:g})")
+    axis.axhline(1.0, color="gray", linestyle="--", linewidth=1.0, label="1 m 阈值")
+    axis.set_xlabel("时间（s）")
+    axis.set_ylabel("编队误差（m）")
+    axis.set_title(f"编队误差（k_form={result.config.k_form:g}）")
     axis.grid(True, alpha=0.3)
     axis.legend(ncol=3, fontsize=8)
     figure.tight_layout()
@@ -139,10 +150,10 @@ def plot_error_comparison(
             linewidth=1.8,
             label=f"k_form={result.config.k_form:g}",
         )
-    axis.axhline(1.0, color="gray", linestyle="--", linewidth=1.0, label="1 m")
-    axis.set_xlabel("Time (s)")
-    axis.set_ylabel("Mean formation error (m)")
-    axis.set_title("Formation Gain Comparison")
+    axis.axhline(1.0, color="gray", linestyle="--", linewidth=1.0, label="1 m 阈值")
+    axis.set_xlabel("时间（s）")
+    axis.set_ylabel("平均编队误差（m）")
+    axis.set_title("不同编队增益对比（k_form）")
     axis.grid(True, alpha=0.3)
     axis.legend()
     figure.tight_layout()
@@ -152,7 +163,7 @@ def plot_error_comparison(
 
 def plot_attitudes(result: SimulationResult, output_path: Path) -> None:
     """保存领航者和 UAV 1 的 roll、pitch、yaw 曲线。"""
-    names = ("Roll", "Pitch", "Yaw")
+    names = ("横滚角", "俯仰角", "偏航角")
     figure, axes = plt.subplots(3, 1, figsize=(10, 8), sharex=True)
     attitude_degrees = np.rad2deg(result.attitudes)
     for component, axis in enumerate(axes):
@@ -160,19 +171,19 @@ def plot_attitudes(result: SimulationResult, output_path: Path) -> None:
             result.times,
             attitude_degrees[:, 0, component],
             color=UAV_COLORS[0],
-            label="Leader UAV 0",
+            label="领航无人机（UAV 0）",
         )
         axis.plot(
             result.times,
             attitude_degrees[:, 1, component],
             color=UAV_COLORS[1],
-            label="Follower UAV 1",
+            label="跟随无人机（UAV 1）",
         )
-        axis.set_ylabel(f"{names[component]} (deg)")
+        axis.set_ylabel(f"{names[component]}（°）")
         axis.grid(True, alpha=0.3)
         axis.legend(loc="upper right", fontsize=8)
-    axes[-1].set_xlabel("Time (s)")
-    figure.suptitle(f"Visual Attitude Tracking (k_form={result.config.k_form:g})")
+    axes[-1].set_xlabel("时间（s）")
+    figure.suptitle(f"可视化姿态跟踪（k_form={result.config.k_form:g}）")
     figure.tight_layout()
     figure.savefig(output_path, dpi=180)
     plt.close(figure)
@@ -188,7 +199,7 @@ def plot_rotor_speeds(
             result.times,
             result.rotor_speeds[:, uav_index, rotor],
             linewidth=1.2,
-            label=f"Rotor {rotor + 1}",
+            label=f"旋翼 {rotor + 1}",
         )
     axis.axhline(
         result.config.omega_min_visual, color="gray", linestyle="--", linewidth=0.8
@@ -196,9 +207,9 @@ def plot_rotor_speeds(
     axis.axhline(
         result.config.omega_max_visual, color="gray", linestyle="--", linewidth=0.8
     )
-    axis.set_xlabel("Time (s)")
-    axis.set_ylabel("Visual rotor speed (rad/s)")
-    axis.set_title(f"UAV {uav_index} Visual Rotor Speeds")
+    axis.set_xlabel("时间（s）")
+    axis.set_ylabel("视觉旋翼转速（rad/s）")
+    axis.set_title(f"无人机（UAV {uav_index}）视觉旋翼转速")
     axis.grid(True, alpha=0.3)
     axis.legend(ncol=2)
     figure.tight_layout()
@@ -279,10 +290,10 @@ def create_formation_animation(
         closeup_axis.clear()
         _configure_3d_axes(global_axis, result)
         global_axis.set_title(
-            f"Global formation | t={result.times[frame]:.2f} s"
+            f"全局编队｜时间 t={result.times[frame]:.2f} s"
         )
         global_axis.scatter(
-            *result.config.goal, color="black", marker="*", s=100, label="Goal"
+            *result.config.goal, color="black", marker="*", s=100, label="目标点"
         )
         obstacles = getattr(result.config, "obstacles", [])
         if obstacles:
@@ -311,19 +322,19 @@ def create_formation_animation(
         closeup_axis.set_ylim(-1.25, 1.25)
         closeup_axis.set_zlim(-0.9, 0.9)
         closeup_axis.set_box_aspect((2.5, 2.5, 1.8))
-        closeup_axis.set_xlabel("body-centered x (m)")
-        closeup_axis.set_ylabel("body-centered y (m)")
-        closeup_axis.set_zlabel("relative z (m)")
+        closeup_axis.set_xlabel("机体中心 X 坐标（m）")
+        closeup_axis.set_ylabel("机体中心 Y 坐标（m）")
+        closeup_axis.set_zlabel("相对 Z 坐标（m）")
         closeup_axis.view_init(elev=28.0, azim=-52.0)
         closeup_axis.grid(True, alpha=0.3)
         attitude_degrees = np.rad2deg(
             result.attitudes[frame, representative_index]
         )
         closeup_axis.set_title(
-            "UAV 1 close-up\n"
-            f"roll={attitude_degrees[0]:.1f} deg, "
-            f"pitch={attitude_degrees[1]:.1f} deg, "
-            f"yaw={attitude_degrees[2]:.1f} deg"
+            "无人机姿态近景（UAV 1）\n"
+            f"横滚角（roll）={attitude_degrees[0]:.1f}°，"
+            f"俯仰角（pitch）={attitude_degrees[1]:.1f}°，"
+            f"偏航角（yaw）={attitude_degrees[2]:.1f}°"
         )
         _draw_quadcopter(
             closeup_axis,

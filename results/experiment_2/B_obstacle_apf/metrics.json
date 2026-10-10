@@ -1,6 +1,6 @@
 {
   "method": "B_obstacle_apf",
-  "method_label": "B: Obstacle APF",
+  "method_label": "方法 B：障碍物人工势场（APF）",
   "obstacle_avoidance_enabled": true,
   "separation_enabled": false,
   "model_note": "三维一阶运动学模型；人工势场只生成期望速度，姿态和旋翼为视觉状态，不包含四旋翼飞行动力学。",

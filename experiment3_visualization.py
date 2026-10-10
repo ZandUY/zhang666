@@ -17,8 +17,8 @@ from visualization import UAV_COLORS, draw_sphere_obstacles
 
 
 METHOD_LABELS = {
-    "standard_apf": "Standard APF",
-    "improved_apf": "Improved APF + tangential escape",
+    "standard_apf": "标准人工势场法（APF）",
+    "improved_apf": "改进人工势场法（APF）+ 切向逃逸",
 }
 METHOD_COLORS = {"standard_apf": "tab:orange", "improved_apf": "tab:green"}
 
@@ -29,9 +29,9 @@ def _configure_axis(axis: plt.Axes, result: Experiment3Result) -> None:
     axis.set_xlim(*config.x_limits)
     axis.set_ylim(*config.y_limits)
     axis.set_zlim(*config.z_limits)
-    axis.set_xlabel("x (m)")
-    axis.set_ylabel("y (m)")
-    axis.set_zlabel("z (m)")
+    axis.set_xlabel("X 坐标（m）")
+    axis.set_ylabel("Y 坐标（m）")
+    axis.set_zlabel("Z 坐标（m）")
     axis.set_box_aspect(
         (
             config.x_limits[1] - config.x_limits[0],
@@ -50,7 +50,7 @@ def plot_trajectory(result: Experiment3Result, output_path: Path) -> None:
     draw_sphere_obstacles(axis, result.config.obstacles)
     for uav_index in range(result.positions.shape[1]):
         trajectory = result.positions[:, uav_index]
-        label = "Leader UAV 0" if uav_index == 0 else f"Follower UAV {uav_index}"
+        label = "领航无人机（UAV 0）" if uav_index == 0 else f"跟随无人机（UAV {uav_index}）"
         axis.plot(
             *trajectory.T,
             color=UAV_COLORS[uav_index],
@@ -59,11 +59,11 @@ def plot_trajectory(result: Experiment3Result, output_path: Path) -> None:
         )
         axis.scatter(*trajectory[0], color=UAV_COLORS[uav_index], marker="o", s=24)
         axis.scatter(*trajectory[-1], color=UAV_COLORS[uav_index], marker="^", s=32)
-    axis.scatter(*result.config.goal, color="black", marker="*", s=120, label="Goal")
+    axis.scatter(*result.config.goal, color="black", marker="*", s=120, label="目标点")
     _configure_axis(axis, result)
-    outcome = "success" if result.metrics["success"] else "failure"
+    outcome = "成功" if result.metrics["success"] else "失败"
     axis.set_title(
-        f"{METHOD_LABELS[result.method_name]} | seed={result.random_seed} | {outcome}"
+        f"{METHOD_LABELS[result.method_name]}｜随机种子（seed）={result.random_seed}｜{outcome}"
     )
     axis.legend(loc="upper left", fontsize=8)
     figure.tight_layout()
@@ -109,8 +109,8 @@ def plot_success_rate(
     _bar_chart(
         summaries,
         "success_rate_percent",
-        "Success rate (%)",
-        "Success Rate over 10 Fixed Seeds",
+        "成功率（%）",
+        "10 个固定随机种子下的任务成功率",
         output_path,
         "%",
     )
@@ -123,8 +123,8 @@ def plot_average_completion_time(
     _bar_chart(
         summaries,
         "average_completion_time_successful_s",
-        "Average completion time (s)",
-        "Average Completion Time (Successful Runs)",
+        "平均任务完成时间（s）",
+        "成功运行的平均任务完成时间",
         output_path,
     )
 
@@ -136,8 +136,8 @@ def plot_average_flight_distance(
     _bar_chart(
         summaries,
         "average_total_flight_distance_m",
-        "Average total flight distance (m)",
-        "Average Swarm Flight Distance",
+        "平均集群飞行距离（m）",
+        "集群平均飞行距离",
         output_path,
     )
 
@@ -157,10 +157,12 @@ def plot_formation_error_comparison(
             linewidth=1.8,
             label=METHOD_LABELS[result.method_name],
         )
-    axis.axhline(1.0, color="gray", linestyle="--", linewidth=1.0, label="1 m")
-    axis.set_xlabel("Time (s)")
-    axis.set_ylabel("Mean formation error (m)")
-    axis.set_title(f"Formation Error Comparison (seed={standard.random_seed})")
+    axis.axhline(1.0, color="gray", linestyle="--", linewidth=1.0, label="1 m 阈值")
+    axis.set_xlabel("时间（s）")
+    axis.set_ylabel("平均编队误差（m）")
+    axis.set_title(
+        f"平均编队误差对比（随机种子 seed={standard.random_seed}）"
+    )
     axis.grid(True, alpha=0.3)
     axis.legend()
     figure.tight_layout()
